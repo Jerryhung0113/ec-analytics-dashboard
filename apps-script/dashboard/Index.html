@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>官網瀏覽數據</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f3f0;
+  --surface-1: #fcfcfb;
+  --surface-2: #f0efec;
+  --border: #e2e0db;
+  --grid: #ebe9e4;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #7a7974;
+  --accent: #2a78d6;
+  --accent-ink: #1c5cab;
+  --series-1: #2a78d6;  /* 會員 */
+  --series-2: #eb6834;  /* 匿名 */
+  --seq-1: #86b6ef; --seq-2: #5598e7; --seq-3: #2a78d6; --seq-4: #1c5cab; --seq-5: #104281;
+  --good: #0ca30c; --critical: #d03b3b;
+  --dot-view: #2a78d6; --dot-cart: #eb6834; --dot-buy: #008300; --dot-page: #a3a29d; --dot-user: #6250d6;
+  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 1px 1px rgba(0,0,0,.03);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --bg: #121211; --surface-1: #1a1a19; --surface-2: #232321; --border: #33332f; --grid: #2a2a27;
+    --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #8f8e88;
+    --accent: #3987e5; --accent-ink: #86b6ef;
+    --series-1: #3987e5; --series-2: #d95926;
+    --seq-1: #184f95; --seq-2: #1c5cab; --seq-3: #2a78d6; --seq-4: #5598e7; --seq-5: #86b6ef;
+    --dot-view: #3987e5; --dot-cart: #d95926; --dot-buy: #0ca30c; --dot-page: #6b6a65; --dot-user: #9085e9;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121211; --surface-1: #1a1a19; --surface-2: #232321; --border: #33332f; --grid: #2a2a27;
+  --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #8f8e88;
+  --accent: #3987e5; --accent-ink: #86b6ef;
+  --series-1: #3987e5; --series-2: #d95926;
+  --seq-1: #184f95; --seq-2: #1c5cab; --seq-3: #2a78d6; --seq-4: #5598e7; --seq-5: #86b6ef;
+  --dot-view: #3987e5; --dot-cart: #d95926; --dot-buy: #0ca30c; --dot-page: #6b6a65; --dot-user: #9085e9;
+  --shadow: none;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text-primary);
+  font-family: "Noto Sans TC", system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+}
+.num { font-variant-numeric: tabular-nums; }
+button, input, select { font: inherit; color: inherit; }
+
+/* ---------- 頂部 ---------- */
+header.top {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+.top-row { display: flex; align-items: center; gap: 16px; padding: 14px 0 10px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+.brand h1 { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: .02em; }
+.brand .sub { color: var(--text-muted); font-size: 12px; }
+.mock-badge {
+  font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  background: var(--surface-2); color: var(--text-secondary); border: 1px dashed var(--border);
+}
+.filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ctl {
+  height: 34px; border: 1px solid var(--border); background: var(--surface-1);
+  border-radius: 8px; padding: 0 10px;
+}
+.ctl:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.btn {
+  height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--accent);
+  background: var(--accent); color: #fff; font-weight: 500; cursor: pointer;
+}
+.btn:hover { filter: brightness(1.06); }
+.btn.ghost { background: transparent; color: var(--text-primary); border-color: var(--border); }
+.dash { color: var(--text-muted); }
+
+nav.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+nav.tabs button {
+  border: 0; background: none; padding: 10px 14px; cursor: pointer; white-space: nowrap;
+  color: var(--text-secondary); border-bottom: 2px solid transparent; font-weight: 500;
+}
+nav.tabs button[aria-selected="true"] { color: var(--text-primary); border-bottom-color: var(--accent); }
+nav.tabs button:hover { color: var(--text-primary); }
+
+main { padding: 24px 0 64px; }
+section.tab { display: none; }
+section.tab.active { display: block; }
+
+/* ---------- 卡片 ---------- */
+.card {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow); padding: 18px 20px; min-width: 0;
+}
+.card h2 { font-size: 15px; font-weight: 700; margin: 0 0 2px; }
+.card .hint { color: var(--text-muted); font-size: 12px; margin: 0 0 14px; }
+.grid { display: grid; gap: 16px; }
+.g-2 { grid-template-columns: 2fr 1fr; }
+.g-2e { grid-template-columns: 1fr 1fr; }
+@media (max-width: 900px) { .g-2 { grid-template-columns: 1fr; } }
+@media (max-width: 1000px) { .g-2e { grid-template-columns: 1fr; } }
+.stack > * + * { margin-top: 16px; }
+
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 1000px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpi { padding: 14px 16px; container-type: inline-size; min-width: 0; }
+.kpi .value { white-space: nowrap; }
+.kpi .value.long { font-size: clamp(15px, 13.5cqi, 26px); }
+.kpi .label { color: var(--text-secondary); font-size: 12px; }
+.kpi .value { font-size: 26px; font-weight: 700; letter-spacing: -.01em; margin-top: 2px; }
+.kpi .foot { color: var(--text-muted); font-size: 12px; }
+
+.chart-box { position: relative; height: 280px; }
+.legend { display: flex; gap: 16px; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; flex-wrap: wrap; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+/* 水平長條 */
+.hbars { display: grid; gap: 10px; }
+.hbar { display: grid; grid-template-columns: 88px 1fr 92px; align-items: center; gap: 10px; }
+.hbar .name { color: var(--text-secondary); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hbar .track { height: 14px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.hbar .fill { height: 100%; background: var(--seq-3); border-radius: 0 4px 4px 0; }
+.hbar .val { text-align: right; font-size: 13px; }
+.hbar .val small { color: var(--text-muted); }
+
+.split { display: flex; height: 18px; border-radius: 4px; overflow: hidden; gap: 2px; background: var(--surface-1); }
+.split div { height: 100%; }
+.split-legend { display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px; }
+.split-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+
+/* 表格 */
+.tbl-wrap { overflow-x: auto; margin: 0 -4px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 9px 8px; text-align: left; border-bottom: 1px solid var(--grid); vertical-align: middle; }
+th { color: var(--text-muted); font-weight: 500; font-size: 12px; white-space: nowrap; position: sticky; top: 0; background: var(--surface-1); }
+td.r, th.r { text-align: right; }
+tbody tr:hover { background: var(--surface-2); }
+.cell-title { max-width: 360px; }
+.cell-title .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell-title .p { color: var(--text-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inline-bar { display: grid; grid-template-columns: 1fr 64px; gap: 8px; align-items: center; min-width: 140px; }
+.inline-bar .track { height: 8px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.inline-bar .fill { height: 100%; background: var(--seq-3); }
+.rank { color: var(--text-muted); width: 28px; }
+.scroll-y { max-height: 560px; overflow-y: auto; }
+
+/* 漏斗 */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.chip {
+  border: 1px solid var(--border); background: var(--surface-1); border-radius: 999px;
+  padding: 4px 12px; cursor: pointer; font-size: 13px; color: var(--text-secondary);
+}
+.chip[aria-pressed="true"] { background: var(--text-primary); border-color: var(--text-primary); color: var(--surface-1); }
+.funnel { display: grid; gap: 4px; }
+.fstep { display: grid; grid-template-columns: 120px 1fr 150px; gap: 14px; align-items: center; }
+.fstep .name { font-weight: 500; }
+.fstep .name small { display: block; color: var(--text-muted); font-weight: 400; font-size: 12px; }
+.fstep .track { height: 34px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
+.fstep .fill { height: 100%; border-radius: 0 6px 6px 0; transition: width .4s ease; }
+.fstep .val { text-align: right; }
+.fstep .val b { font-size: 16px; }
+.fstep .val small { display: block; color: var(--text-muted); font-size: 12px; }
+.fdrop { margin-left: 134px; font-size: 12px; color: var(--text-muted); padding: 2px 0 6px; }
+.fdrop b { color: var(--critical); font-weight: 500; }
+@media (max-width: 640px) {
+  .fstep { grid-template-columns: 80px 1fr 96px; gap: 8px; }
+  .fdrop { margin-left: 88px; }
+}
+.compare th:first-child, .compare td:first-child { white-space: nowrap; }
+
+/* 個別追蹤 */
+.search-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.search-row .ctl { flex: 1; min-width: 240px; }
+.link { color: var(--accent-ink); cursor: pointer; text-decoration: none; border: 0; background: none; padding: 0; }
+.link:hover { text-decoration: underline; }
+.mono { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 12px; }
+.summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 800px) { .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.summary .kpi .value { font-size: 20px; }
+.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(--text-secondary); font-size: 13px; cursor: pointer; }
+
+.session { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface-1); }
+.session + .session { margin-top: 12px; }
+.s-head {
+  display: flex; gap: 8px 18px; flex-wrap: wrap; align-items: center;
+  padding: 10px 14px; background: var(--surface-2); font-size: 13px;
+}
+.s-head .when { font-weight: 700; }
+.s-head .meta { color: var(--text-secondary); }
+.tag {
+  display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--text-secondary); background: var(--surface-1);
+}
+.tag.member { border-color: var(--series-1); color: var(--accent-ink); }
+.events { list-style: none; margin: 0; padding: 6px 0; }
+.events li { display: grid; grid-template-columns: 70px 14px 120px 1fr; gap: 10px; padding: 6px 14px; align-items: start; }
+.events li:hover { background: var(--surface-2); }
+.events .time { color: var(--text-muted); font-size: 12px; padding-top: 1px; }
+.events .dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 6px; background: var(--dot-page); }
+.events .evn { font-weight: 500; font-size: 13px; }
+.events .det { min-width: 0; font-size: 13px; }
+.events .det .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.events .det .p { color: var(--text-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 640px) {
+  .events li { grid-template-columns: 56px 12px 1fr; }
+  .events .det { grid-column: 3; }
+}
+
+/* 分眾名單 */
+.presets { display: flex; gap: 8px; flex-wrap: wrap; }
+.preset {
+  border: 1px solid var(--border); background: var(--surface-1); border-radius: 10px; padding: 10px 14px;
+  cursor: pointer; text-align: left; min-width: 180px; flex: 1;
+}
+.preset:hover { border-color: var(--accent); }
+.preset b { display: block; font-size: 14px; }
+.preset span { color: var(--text-muted); font-size: 12px; }
+.form-grid { display: grid; grid-template-columns: 140px 1fr; gap: 14px 16px; align-items: start; }
+.form-grid > label { color: var(--text-secondary); font-size: 13px; padding-top: 6px; }
+@media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; gap: 6px; } .form-grid > label { padding-top: 10px; } }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ctl.sm { width: 110px; }
+.ctl.md { width: 200px; }
+.ctl.wide { flex: 1; min-width: 220px; }
+.chips.tight { margin: 0; }
+.chip small { color: inherit; opacity: .65; margin-left: 4px; }
+.sub-block { border-top: 1px dashed var(--border); padding-top: 14px; margin-top: 14px; }
+.sub-block h3 { font-size: 14px; margin: 0 0 10px; }
+.big-num { font-size: 40px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.result-head { display: flex; gap: 24px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 14px; }
+.result-head .meta { color: var(--text-secondary); font-size: 13px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+.note {
+  background: var(--surface-2); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--text-secondary);
+}
+.note b { color: var(--text-primary); }
+textarea.ctl { width: 100%; height: 120px; padding: 8px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+
+/* 營收與回購 */
+.kpi .dl { color: var(--text-secondary); }
+.arrow { font-size: 10px; margin-right: 3px; }
+.arrow.up { color: var(--good); }
+.arrow.down { color: var(--critical); }
+.mini-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+#rvRetSum .mini-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 760px) { #rvRetSum .mini-stats { grid-template-columns: 1fr 1fr; } }
+.scroll-y.tall { max-height: 720px; }
+.scroll-y.short { max-height: 300px; }
+table.cohort td.hm { min-width: 52px; }
+.mini-stats div { display: flex; flex-direction: column; }
+.mini-stats span { color: var(--text-secondary); font-size: 12px; }
+.mini-stats b { font-size: 20px; }
+.mini-stats small { color: var(--text-muted); font-size: 11px; }
+table.cohort td.hm { text-align: center; background: color-mix(in srgb, var(--seq-4) var(--a), transparent); border-left: 2px solid var(--surface-1); font-size: 12px; }
+table.cohort td.hm[data-dark="true"] { color: #fff; }
+table.cohort td.hm.empty { background: none; }
+table.cohort th { text-align: center; }
+table.cohort tbody tr:hover { background: none; }
+
+/* 不需左右捲動的表格：名稱換行、數字不換行 */
+.fit .tbl-wrap { overflow-x: visible; margin: 0; }
+.fit table { table-layout: auto; }
+.fit th { white-space: normal; }
+.fit td.r, .fit td.num, .fit th.r { white-space: nowrap; }
+.fit .cell-title { max-width: none; min-width: 120px; }
+.fit .cell-title .t { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+.fit .inline-bar { min-width: 0; grid-template-columns: 72px auto; justify-content: start; gap: 8px; }
+.inline-bar > .num { text-align: left; white-space: nowrap; }
+.fit .cell-title .p { white-space: normal; word-break: break-all; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+.fit th, .fit td { padding-left: 6px; padding-right: 6px; }
+@media (max-width: 640px) { .fit .tbl-wrap { overflow-x: auto; } }
+
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--text-primary); }
+th.sortable.on { color: var(--text-primary); font-weight: 700; }
+th.sortable .si { margin-left: 3px; font-size: 10px; opacity: .55; }
+th.sortable.on .si { opacity: 1; color: var(--accent-ink); }
+th.l { text-align: left; }
+
+/* 狀態 */
+.state { padding: 40px 16px; text-align: center; color: var(--text-muted); }
+.error {
+  border: 1px solid color-mix(in srgb, var(--critical) 40%, var(--border));
+  background: color-mix(in srgb, var(--critical) 6%, var(--surface-1));
+  color: var(--text-primary); border-radius: 10px; padding: 12px 14px; font-size: 13px;
+}
+.error b { color: var(--critical); }
+.skeleton { height: 14px; border-radius: 4px; background: linear-gradient(90deg, var(--surface-2), var(--grid), var(--surface-2)); background-size: 200% 100%; animation: sk 1.2s infinite; }
+@keyframes sk { to { background-position: -200% 0; } }
+.loading-bar { height: 2px; background: var(--accent); width: 0; transition: width .3s; }
+.loading-bar.on { width: 70%; transition: width 4s cubic-bezier(.1,.6,.3,1); }
+.foot-note { color: var(--text-muted); font-size: 12px; margin-top: 10px; }
+@media (max-width: 640px) { .wrap { padding: 0 16px; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="top-row">
+      <div class="brand">
+        <h1>官網瀏覽數據</h1>
+        <span class="sub" id="who"></span>
+        <span class="mock-badge" id="mockBadge" hidden>模擬資料預覽</span>
+      </div>
+      <div class="filters">
+        <select class="ctl" id="site" aria-label="網站"></select>
+        <select class="ctl" id="preset" aria-label="日期區間">
+          <option value="1">昨天</option>
+          <option value="7" selected>過去 7 天</option>
+          <option value="28">過去 28 天</option>
+          <option value="90">過去 90 天</option>
+          <option value="custom">自訂</option>
+        </select>
+        <input class="ctl num" type="date" id="start" aria-label="開始日期">
+        <span class="dash">–</span>
+        <input class="ctl num" type="date" id="end" aria-label="結束日期">
+        <button class="btn" id="apply">更新</button>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="overview" aria-selected="true">流量總覽</button>
+      <button role="tab" data-tab="content" aria-selected="false">熱門內容</button>
+      <button role="tab" data-tab="funnel" aria-selected="false">轉換漏斗</button>
+      <button role="tab" data-tab="sources" aria-selected="false">流量來源</button>
+      <button role="tab" data-tab="revenue" aria-selected="false">營收與回購</button>
+      <button role="tab" data-tab="person" aria-selected="false">個別追蹤</button>
+      <button role="tab" data-tab="segment" aria-selected="false">分眾名單</button>
+    </nav>
+  </div>
+  <div class="loading-bar" id="loadingBar"></div>
+</header>
+
+<main class="wrap">
+  <!-- 流量總覽 -->
+  <section class="tab active" id="tab-overview">
+    <div class="stack">
+      <div class="kpis" id="ovKpis"></div>
+      <div class="grid g-2">
+        <div class="card">
+          <h2>每日訪客裝置</h2>
+          <p class="hint">當天有登入會員的裝置 vs. 全程未登入的匿名裝置</p>
+          <div class="legend"><span><i style="background:var(--series-1)"></i>會員裝置</span><span><i style="background:var(--series-2)"></i>匿名裝置</span></div>
+          <div class="chart-box"><canvas id="dailyChart" aria-label="每日訪客裝置長條圖" role="img"></canvas></div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h2>會員 vs. 匿名</h2>
+            <p class="hint">期間內的裝置數</p>
+            <div id="ovSplit"></div>
+          </div>
+          <div class="card">
+            <h2>裝置類型</h2>
+            <p class="hint">訪客裝置數與占比</p>
+            <div class="hbars" id="ovDevices"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 熱門內容 -->
+  <section class="tab" id="tab-content">
+    <div class="grid g-2e">
+      <div class="card fit">
+        <h2>熱門頁面</h2>
+        <p class="hint">點欄位標題可以排序（預設依瀏覽量），顯示前 50 名；停留＝平均每次瀏覽的互動秒數</p>
+        <div class="tbl-wrap scroll-y" id="ctPages"></div>
+      </div>
+      <div class="card fit">
+        <h2>熱門商品</h2>
+        <p class="hint">點欄位標題可以排序（預設依瀏覽），顯示前 50 名；加購率＝加入購物車件數 ÷ 商品頁瀏覽</p>
+        <div class="tbl-wrap scroll-y" id="ctProducts"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 轉換漏斗 -->
+  <section class="tab" id="tab-funnel">
+    <div class="stack">
+      <div class="card">
+        <h2>購物轉換漏斗</h2>
+        <p class="hint">以「工作階段」計算：一次造訪中有做到該步驟就算一次</p>
+        <div class="chips" id="fnChips"></div>
+        <div class="funnel" id="fnSteps"></div>
+      </div>
+      <div class="card">
+        <h2>各族群比較</h2>
+        <p class="hint">每一欄都是「占該族群所有工作階段」的比例</p>
+        <div class="tbl-wrap" id="fnCompare"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 流量來源 -->
+  <section class="tab" id="tab-sources">
+    <div class="stack">
+      <div class="grid g-2">
+        <div class="card">
+          <h2>各管道的行為比較</h2>
+          <p class="hint">管道依工作階段第一個來源判定</p>
+          <div class="tbl-wrap" id="srTable"></div>
+        </div>
+        <div class="card">
+          <h2>工作階段來自哪裡</h2>
+          <p class="hint">工作階段數與占比</p>
+          <div class="hbars" id="srBars"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>來源 / 媒介明細</h2>
+        <p class="hint">前 30 名，可用來檢查 UTM 是否設定正確。點下方管道可以只看該管道的來源</p>
+        <div class="chips" id="srChips" style="margin-bottom:12px"></div>
+        <div class="tbl-wrap" id="srDetail"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 個別追蹤 -->
+  <section class="tab" id="tab-person">
+    <div class="stack">
+      <div class="card">
+        <h2>查詢會員或裝置</h2>
+        <p class="hint">輸入 SHOPLINE 會員 ID，或裝置 ID（瀏覽器 _ga cookie 後兩段數字，也可以直接貼整段 GA1.1.xxx.xxx）</p>
+        <div class="search-row">
+          <input class="ctl mono" id="pid" placeholder="例：64f0c0ffee1234567890abcd 或 1234567890.1793946570" autocomplete="off">
+          <button class="btn" id="pidGo">查詢</button>
+        </div>
+      </div>
+      <div id="tlOut"></div>
+      <div class="card">
+        <h2>期間內活躍的會員</h2>
+        <p class="hint">最近活動在前，點會員 ID 查看完整時間軸</p>
+        <div class="tbl-wrap scroll-y" id="rmTable"></div>
+      </div>
+    </div>
+  </section>
+  <!-- 營收與回購 -->
+  <section class="tab" id="tab-revenue">
+    <div class="stack">
+      <div class="kpis" id="rvKpis"></div>
+      <div class="grid g-2">
+        <div class="card">
+          <h2>每月營收：新客 vs. 回購</h2>
+          <p class="hint">最近 13 個月（到所選結束日期為止），排除已取消訂單</p>
+          <div class="legend"><span><i style="background:var(--series-1)"></i>回購營收</span><span><i style="background:var(--series-2)"></i>新客營收</span></div>
+          <div class="chart-box"><canvas id="revChart" role="img" aria-label="每月新客與回購營收堆疊長條圖"></canvas></div>
+        </div>
+        <div class="card">
+          <h2>期間摘要</h2>
+          <p class="hint">所選日期區間</p>
+          <div id="rvSummary"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>新客回購</h2>
+        <p class="hint">新客首購之後的回購表現（不受上方日期影響）</p>
+        <div id="rvRetSum"></div>
+        <div class="sub-block">
+          <h3>回購世代表</h3>
+          <p class="hint">每一列是某個月首購的新客，往右看他們在第 1～12 個月有多少比例回來買</p>
+          <div class="tbl-wrap" id="rvCohort"></div>
+        </div>
+      </div>
+      <div class="card fit">
+        <h2>熱銷商品</h2>
+        <p class="hint">依折扣後營收排序，前 30 名（排除贈品）</p>
+        <div class="tbl-wrap scroll-y" id="rvProducts"></div>
+      </div>
+      <div class="grid g-2e">
+        <div class="card fit">
+          <h2>哪些商品帶進會回購的新客</h2>
+          <p class="hint">新客第一筆訂單買的商品</p>
+          <div class="tbl-wrap scroll-y tall" id="rvFirst"></div>
+        </div>
+        <div class="stack">
+          <div class="card fit">
+            <h2>優惠活動成效</h2>
+            <p class="hint">期間內有套用該活動的訂單</p>
+            <div class="tbl-wrap scroll-y short" id="rvPromos"></div>
+          </div>
+          <div class="card fit">
+            <h2>折扣碼成效</h2>
+            <p class="hint">期間內使用該折扣碼的訂單</p>
+            <div class="tbl-wrap scroll-y short" id="rvCoupons"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 分眾名單 -->
+  <section class="tab" id="tab-segment">
+    <div class="stack">
+      <div class="card">
+        <h2>快速開始</h2>
+        <p class="hint">點一個常用名單，會自動帶入建議條件，再依需要微調。此分頁不受上方日期區間影響，行為期間在下方另外設定。</p>
+        <div class="presets">
+          <button class="preset" data-preset="promo"><b>對優惠活動敏感</b><span>最近常瀏覽優惠、活動頁</span></button>
+          <button class="preset" data-preset="product"><b>對特定商品感興趣</b><span>看過、搜尋過、加過購物車</span></button>
+          <button class="preset" data-preset="concern"><b>有特定困擾</b><span>瀏覽相關商品或內容</span></button>
+          <button class="preset" data-preset="cart"><b>加購物車沒結帳</b><span>放棄購物車再行銷</span></button>
+          <button class="preset ghost" data-preset="reset"><b>清除條件</b><span>全部重新設定</span></button>
+        </div>
+      </div>
+
+      <div class="grid g-2e">
+        <div class="card">
+          <h2>會員條件</h2>
+          <p class="hint">來自 SHOPLINE 會員資料（crm.members）；不選代表不限</p>
+          <div id="segMemberForm"></div>
+        </div>
+        <div class="card">
+          <h2>瀏覽行為</h2>
+          <p class="hint">只有能辨識身分的會員才有行為資料：登入過官網，或從帶會員 ID 的 LINE 推播連結進站</p>
+          <div class="form-grid">
+            <label for="segDays">行為期間</label>
+            <div class="row">
+              <select class="ctl" id="segDays">
+                <option value="7">最近 7 天</option><option value="14">最近 14 天</option>
+                <option value="30" selected>最近 30 天</option><option value="60">最近 60 天</option>
+                <option value="90">最近 90 天</option><option value="180">最近 180 天</option>
+              </select>
+            </div>
+          </div>
+          <div class="sub-block">
+            <h3>對特定商品／困擾有興趣</h3>
+            <div class="form-grid">
+              <label for="segConcern">困擾類型</label>
+              <div class="row"><select class="ctl md" id="segConcern"><option value="">（不使用）</option></select></div>
+              <label for="segKw">關鍵字</label>
+              <div class="row">
+                <input class="ctl wide" id="segKw" list="segProducts" placeholder="商品名稱或關鍵字，多個用逗號分隔，例：洗髮精, 頭皮">
+                <datalist id="segProducts"></datalist>
+              </div>
+              <label for="segMinHits">至少互動</label>
+              <div class="row"><input class="ctl sm num" type="number" min="1" id="segMinHits" value="1"> 次 <span class="hint" style="margin:0">（瀏覽、搜尋、加入購物車都算）</span></div>
+              <label></label>
+              <label class="toggle"><input type="checkbox" id="segExcludeBought"> 排除期間內已經買過相關商品的人（以 SHOPLINE 訂單為準）</label>
+            </div>
+          </div>
+          <div class="sub-block">
+            <h3>對優惠敏感</h3>
+            <div class="form-grid">
+              <label for="segPromo">瀏覽優惠頁</label>
+              <div class="row"><input class="ctl sm num" type="number" min="0" id="segPromo" value="0"> 次以上 <span class="hint" style="margin:0">（0＝不限）</span></div>
+              <label></label>
+              <div class="hint" id="segPromoHint" style="margin:0"></div>
+            </div>
+          </div>
+          <div class="sub-block">
+            <h3>購物車</h3>
+            <label class="toggle"><input type="checkbox" id="segCart"> 期間內加入購物車，但沒有訂單（以 SHOPLINE 訂單為準）</label>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn" id="segRun">計算名單</button>
+      </div>
+
+      <div id="segOut"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ====================== 資料存取 ====================== */
+const IS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
+
+function api(fn, ...args) {
+  if (!IS_GAS) return new Promise(r => setTimeout(() => r(MOCK[fn](...args)), 300));
+  return new Promise((resolve, reject) => {
+    google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(e => reject(e))[fn](...args);
+  });
+}
+
+let pending = 0;
+function busy(on) {
+  pending += on ? 1 : -1;
+  const bar = document.getElementById('loadingBar');
+  if (pending > 0) { bar.classList.add('on'); }
+  else { bar.classList.remove('on'); bar.style.width = '100%'; setTimeout(() => (bar.style.width = ''), 250); }
+}
+async function load(fn, ...args) {
+  busy(true);
+  try { return await api(fn, ...args); }
+  finally { busy(false); }
+}
+
+/* ====================== 格式 ====================== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const n = v => (v == null || isNaN(v) ? '–' : Number(v).toLocaleString('zh-TW'));
+const pct = (v, d = 1) => (v == null || !isFinite(v) ? '–' : (v * 100).toFixed(d) + '%');
+const money = v => (v == null ? '–' : 'NT$' + Math.round(v).toLocaleString('zh-TW'));
+const div = (a, b) => (b ? a / b : null);
+function dur(sec) {
+  sec = Math.round(sec || 0);
+  if (sec < 60) return sec + ' 秒';
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m + ' 分 ' + (s ? s + ' 秒' : '');
+}
+const DEVICE = { mobile: '手機', desktop: '電腦', tablet: '平板', smart_tv: '電視', unknown: '未知' };
+function errBox(e) {
+  const msg = (e && e.message) || String(e);
+  return `<div class="error"><b>無法載入：</b>${esc(msg)}</div>`;
+}
+function loadingRows(k = 4) {
+  return '<div class="stack" style="padding:8px 0">' + Array.from({ length: k }, (_, i) => `<div class="skeleton" style="width:${90 - i * 12}%"></div>`).join('') + '</div>';
+}
+function hbars(items, total) {
+  const max = Math.max(1, ...items.map(x => x.value));
+  return items.map(x => `
+    <div class="hbar" title="${esc(x.name)}：${n(x.value)}">
+      <span class="name">${esc(x.name)}</span>
+      <span class="track"><span class="fill" style="display:block;width:${(x.value / max) * 100}%"></span></span>
+      <span class="val num">${n(x.value)} <small>${pct(div(x.value, total), 0)}</small></span>
+    </div>`).join('');
+}
+
+/* ====================== 狀態 ====================== */
+const state = { site: null, start: null, end: null, tab: 'overview', loaded: {}, funnelSeg: '全部', funnel: null };
+
+function ymd(d) {
+  const z = x => String(x).padStart(2, '0');
+  return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+}
+function applyPreset() {
+  const p = $('preset').value;
+  if (p === 'custom') return;
+  const end = new Date(); end.setDate(end.getDate() - 1);   // GA4 每日匯出到昨天
+  const start = new Date(end); start.setDate(end.getDate() - (Number(p) - 1));
+  $('start').value = ymd(start); $('end').value = ymd(end);
+}
+function readFilters() {
+  state.site = $('site').value; state.start = $('start').value; state.end = $('end').value;
+  state.loaded = {};
+}
+function rangeKey() { return [state.site, state.start, state.end].join('|'); }
+
+function showTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
+  document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + tab));
+  try { localStorage.setItem('ga-dash-tab', tab); } catch (e) {}
+  refreshTab();
+}
+function refreshTab() {
+  const key = state.tab + '|' + rangeKey();
+  if (state.loaded[state.tab] === key) return;
+  state.loaded[state.tab] = key;
+  ({ overview: renderOverview, content: renderContent, funnel: renderFunnel, sources: renderSources, person: renderPerson, segment: renderSegmentForm, revenue: renderRevenue })[state.tab]();
+}
+
+/* ====================== 流量總覽 ====================== */
+let dailyChart;
+async function renderOverview() {
+  $('ovKpis').innerHTML = Array.from({ length: 6 }, () => `<div class="card kpi">${loadingRows(2)}</div>`).join('');
+  $('ovSplit').innerHTML = loadingRows(2); $('ovDevices').innerHTML = loadingRows(3);
+  let d;
+  try { d = await load('getOverview', state.site, state.start, state.end); }
+  catch (e) { $('ovKpis').innerHTML = `<div style="grid-column:1/-1">${errBox(e)}</div>`; $('ovSplit').innerHTML = ''; $('ovDevices').innerHTML = ''; drawDaily([]); return; }
+  if (!d) d = { totals: {}, daily: [], devices: [] };
+  const t = d.totals || {};
+  const anon = (t.users || 0) - (t.member_devices || 0);
+  const kpis = [
+    ['訪客裝置', n(t.users), '不重複裝置數'],
+    ['登入會員', n(t.members), '不重複會員數'],
+    ['匿名裝置', n(anon), '期間內從未登入'],
+    ['工作階段', n(t.sessions), '造訪次數'],
+    ['瀏覽量', n(t.pageviews), '每次造訪 ' + (div(t.pageviews, t.sessions) || 0).toFixed(1) + ' 頁'],
+    ['平均互動時間', dur(div(t.eng_sec, t.sessions)), '每次造訪'],
+  ];
+  $('ovKpis').innerHTML = kpis.map(k => `<div class="card kpi"><div class="label">${k[0]}</div><div class="value num">${k[1]}</div><div class="foot">${k[2]}</div></div>`).join('');
+  fitKpis($('ovKpis'));
+
+  const md = t.member_devices || 0, tot = t.users || 0;
+  $('ovSplit').innerHTML = tot ? `
+    <div class="split" role="img" aria-label="會員裝置 ${pct(div(md, tot))}，匿名裝置 ${pct(div(anon, tot))}">
+      <div style="width:${(md / tot) * 100}%;background:var(--series-1)" title="會員裝置 ${n(md)}"></div>
+      <div style="width:${(anon / tot) * 100}%;background:var(--series-2)" title="匿名裝置 ${n(anon)}"></div>
+    </div>
+    <div class="split-legend num">
+      <span><i style="background:var(--series-1)"></i>會員裝置 <b>${pct(div(md, tot))}</b> · ${n(md)}</span>
+      <span><i style="background:var(--series-2)"></i>匿名 <b>${pct(div(anon, tot))}</b> · ${n(anon)}</span>
+    </div>` : '<div class="state">沒有資料</div>';
+
+  const devs = (d.devices || []).map(x => ({ name: DEVICE[x.cat] || x.cat, value: x.users }));
+  const dTot = devs.reduce((a, b) => a + b.value, 0);
+  $('ovDevices').innerHTML = devs.length ? hbars(devs, dTot) : '<div class="state">沒有資料</div>';
+  drawDaily(d.daily || []);
+}
+
+function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function drawDaily(rows) {
+  if (typeof Chart === 'undefined') return;
+  const ctx = $('dailyChart');
+  if (dailyChart) dailyChart.destroy();
+  const surface = cssVar('--surface-1');
+  // 上層長條的底部加 2px 表面色邊框，讓兩段之間有間隙
+  const common = { borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, borderColor: surface, borderWidth: { bottom: 2 }, maxBarThickness: 36 };
+  dailyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => r.date.slice(5).replace('-', '/')),
+      datasets: [
+        { label: '會員裝置', data: rows.map(r => r.member_devices), backgroundColor: cssVar('--series-1'), ...common, borderRadius: 0, borderWidth: 0 },
+        { label: '匿名裝置', data: rows.map(r => r.anon_devices), backgroundColor: cssVar('--series-2'), ...common },
+      ],
+    },
+    options: {
+      maintainAspectRatio: false, animation: { duration: 300 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: cssVar('--text-primary'), titleColor: surface, bodyColor: surface, padding: 10, boxPadding: 4,
+          callbacks: {
+            title: items => rows[items[0].dataIndex].date,
+            footer: items => { const r = rows[items[0].dataIndex]; return '合計 ' + n(r.users) + ' 台 · 會員 ' + n(r.members) + ' 人 · 瀏覽 ' + n(r.pageviews); },
+          },
+        },
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { color: cssVar('--text-muted'), maxRotation: 0, autoSkipPadding: 12 }, border: { color: cssVar('--border') } },
+        y: { stacked: true, beginAtZero: true, grid: { color: cssVar('--grid') }, border: { display: false }, ticks: { color: cssVar('--text-muted'), precision: 0 } },
+      },
+    },
+  });
+}
+
+/* ====================== 熱門內容 ====================== */
+/* 熱門內容：資料存在前端，點欄位標題就重新排序，不用再查 BigQuery */
+const ct = {
+  data: { pages: [], products: [] },
+  sort: { pages: ['pageviews', -1], products: ['views', -1] },
+};
+// 比例類指標容易被極少量資料拉高，排序時設最低門檻
+const CT_MIN = { pages: { avg_sec: ['pageviews', 5] }, products: { atc_rate: ['views', 10] } };
+const CT_SHOW = 50;
+
+async function renderContent() {
+  $('ctPages').innerHTML = loadingRows(6); $('ctProducts').innerHTML = loadingRows(6);
+  let d;
+  try { d = await load('getContent', state.site, state.start, state.end); }
+  catch (e) { $('ctPages').innerHTML = errBox(e); $('ctProducts').innerHTML = ''; return; }
+  d = d || { pages: [], products: [] };
+  ct.data.pages = d.pages || [];
+  ct.data.sales_source = d.sales_source; ct.data.sales_through = d.sales_through;
+  ct.data.products = (d.products || []).map(p => Object.assign({}, p, { atc_rate: div(p.add_to_cart, p.views) }));
+  drawPages(); drawProducts();
+}
+function ctSorted(kind) {
+  const [key, dir] = ct.sort[kind];
+  let rows = ct.data[kind];
+  const min = CT_MIN[kind][key];
+  if (min) rows = rows.filter(r => (r[min[0]] || 0) >= min[1]);
+  rows = rows.slice().sort((a, b) => {
+    const va = a[key], vb = b[key];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return (va - vb) * dir;
+  });
+  return { rows: rows.slice(0, CT_SHOW), min };
+}
+function sortTh(kind, key, label, cls) {
+  const [k, dir] = ct.sort[kind];
+  const on = k === key;
+  return `<th class="${cls || 'r'} sortable${on ? ' on' : ''}" data-kind="${kind}" data-key="${key}" title="點一下排序">${label}<span class="si">${on ? (dir < 0 ? '▼' : '▲') : '↕'}</span></th>`;
+}
+function drawPages() {
+  const all = ct.data.pages;
+  if (!all.length) { $('ctPages').innerHTML = '<div class="state">這段期間沒有頁面瀏覽資料</div>'; return; }
+  const { rows, min } = ctSorted('pages');
+  const maxPv = Math.max(1, ...all.map(p => p.pageviews));
+  $('ctPages').innerHTML = `${min ? `<p class="foot-note" style="margin:0 0 6px">依停留排序時，只列瀏覽量 ${min[1]} 次以上的頁面，避免只被看 1、2 次的頁面排在前面。</p>` : ''}<table>
+    <thead><tr><th class="rank">#</th><th>頁面</th>${sortTh('pages', 'pageviews', '瀏覽量', 'l')}${sortTh('pages', 'users', '訪客')}${sortTh('pages', 'avg_sec', '停留')}</tr></thead>
+    <tbody>${rows.map((p, i) => `<tr>
+      <td class="rank num">${i + 1}</td>
+      <td class="cell-title"><div class="t" title="${esc(p.title)}">${esc(p.title || '(無標題)')}</div><div class="p" title="${esc(p.path)}">${esc(decodeSafe(p.path))}</div></td>
+      <td><div class="inline-bar"><span class="track"><span class="fill" style="display:block;width:${(p.pageviews / maxPv) * 100}%"></span></span><span class="num r">${n(p.pageviews)}</span></div></td>
+      <td class="r num">${n(p.users)}</td>
+      <td class="r num">${dur(p.avg_sec)}</td></tr>`).join('')}</tbody></table>`;
+}
+function drawProducts() {
+  if (!ct.data.products.length) { $('ctProducts').innerHTML = '<div class="state">這段期間沒有商品事件（view_item / add_to_cart / purchase）</div>'; return; }
+  const { rows, min } = ctSorted('products');
+  $('ctProducts').innerHTML = `${min ? `<p class="foot-note" style="margin:0 0 6px">依加購率排序時，只列瀏覽 ${min[1]} 次以上的商品。</p>` : ''}<table>
+    <thead><tr><th class="rank">#</th><th>商品</th>${sortTh('products', 'views', '瀏覽')}${sortTh('products', 'add_to_cart', '加購')}${sortTh('products', 'atc_rate', '加購率')}${sortTh('products', 'purchased', '售出')}${sortTh('products', 'revenue', '營收')}</tr></thead>
+    <tbody>${rows.map((p, i) => `<tr>
+      <td class="rank num">${i + 1}</td>
+      <td class="cell-title"><div class="t" title="${esc(p.name)}">${esc(p.name || p.item_id)}</div><div class="p">${esc(p.item_id || '')}</div></td>
+      <td class="r num">${n(p.views)}</td>
+      <td class="r num">${n(p.add_to_cart)}</td>
+      <td class="r num">${pct(p.atc_rate)}</td>
+      <td class="r num">${n(p.purchased)}</td>
+      <td class="r num">${money(p.revenue)}</td></tr>`).join('')}</tbody></table>
+    <p class="foot-note">${ct.data.sales_source === 'shopline'
+      ? `瀏覽、加購來自 GA4；售出、營收來自 SHOPLINE 訂單（折扣後金額，不含贈品與取消單），以商品料號對應${ct.data.sales_through ? `，統計到 ${ct.data.sales_through.slice(4, 6)}/${ct.data.sales_through.slice(6, 8)}（與瀏覽資料同一天為止）` : ''}。`
+      : '售出、營收為 GA4 記錄的數字，會比實際訂單少。'}</p>`;
+}
+['ctPages', 'ctProducts'].forEach(id => $(id).addEventListener('click', e => {
+  const th = e.target.closest('th.sortable'); if (!th) return;
+  const kind = th.dataset.kind, key = th.dataset.key;
+  const cur = ct.sort[kind];
+  ct.sort[kind] = [key, cur[0] === key ? -cur[1] : -1];   // 換欄位時先由大到小；同欄位再點就反過來
+  kind === 'pages' ? drawPages() : drawProducts();
+}));
+function decodeSafe(s) { try { return decodeURIComponent(s); } catch (e) { return s; } }
+
+/* ====================== 轉換漏斗 ====================== */
+const STEPS = [
+  ['sessions', '所有造訪', '工作階段'],
+  ['view_item', '瀏覽商品', 'view_item'],
+  ['add_to_cart', '加入購物車', 'add_to_cart'],
+  ['begin_checkout', '開始結帳', 'begin_checkout'],
+  ['purchase', '完成購買', 'purchase'],
+];
+const SEG_ORDER = ['全部', '會員', '匿名', '手機', '電腦', '平板', '其他裝置'];
+async function renderFunnel() {
+  $('fnSteps').innerHTML = loadingRows(5); $('fnCompare').innerHTML = ''; $('fnChips').innerHTML = '';
+  let d;
+  try { d = await load('getFunnel', state.site, state.start, state.end); }
+  catch (e) { $('fnSteps').innerHTML = errBox(e); return; }
+  d = (d || []).sort((a, b) => SEG_ORDER.indexOf(a.seg) - SEG_ORDER.indexOf(b.seg));
+  state.funnel = d;
+  if (!d.some(x => x.seg === state.funnelSeg)) state.funnelSeg = '全部';
+  drawFunnel();
+  $('fnCompare').innerHTML = d.length ? `<table class="compare">
+    <thead><tr><th>族群</th><th class="r">工作階段</th>${STEPS.slice(1).map(s => `<th class="r">${s[1]}</th>`).join('')}</tr></thead>
+    <tbody>${d.map(r => `<tr><td>${esc(r.seg)}</td><td class="r num">${n(r.sessions)}</td>${STEPS.slice(1).map(s => `<td class="r num">${pct(div(r[s[0]], r.sessions), 2)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '';
+}
+function drawFunnel() {
+  const d = state.funnel || [];
+  $('fnChips').innerHTML = d.map(r => `<button class="chip" aria-pressed="${r.seg === state.funnelSeg}" data-seg="${esc(r.seg)}">${esc(r.seg)}</button>`).join('');
+  const r = d.find(x => x.seg === state.funnelSeg);
+  if (!r || !r.sessions) { $('fnSteps').innerHTML = '<div class="state">這段期間沒有資料</div>'; return; }
+  const colors = ['--seq-1', '--seq-2', '--seq-3', '--seq-4', '--seq-5'];
+  let html = '';
+  STEPS.forEach((s, i) => {
+    const v = r[s[0]] || 0;
+    if (i > 0) {
+      const prev = r[STEPS[i - 1][0]] || 0;
+      const keep = div(v, prev);
+      html += `<div class="fdrop num">↓ 留下 ${pct(keep)}，流失 <b>${n(Math.max(prev - v, 0))}</b></div>`;
+    }
+    html += `<div class="fstep" title="${s[1]}：${n(v)}">
+      <div class="name">${s[1]}<small class="mono">${s[2]}</small></div>
+      <div class="track"><div class="fill" style="width:${Math.max((v / r.sessions) * 100, v ? 0.6 : 0)}%;background:var(${colors[i]})"></div></div>
+      <div class="val num"><b>${n(v)}</b><small>占造訪 ${pct(div(v, r.sessions), 2)}</small></div></div>`;
+  });
+  $('fnSteps').innerHTML = html;
+}
+$('fnChips').addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if (!b) return;
+  state.funnelSeg = b.dataset.seg; drawFunnel();
+});
+
+/* ====================== 流量來源 ====================== */
+async function renderSources() {
+  $('srTable').innerHTML = loadingRows(6); $('srBars').innerHTML = loadingRows(4); $('srDetail').innerHTML = ''; $('srChips').innerHTML = '';
+  let d;
+  try { d = await load('getSources', state.site, state.start, state.end); }
+  catch (e) { $('srTable').innerHTML = errBox(e); $('srBars').innerHTML = ''; return; }
+  d = d || { channels: [], detail: [] };
+  const ch = d.channels || [];
+  const tot = ch.reduce((a, b) => a + b.sessions, 0);
+  $('srBars').innerHTML = ch.length ? hbars(ch.map(c => ({ name: c.channel, value: c.sessions })), tot) : '<div class="state">沒有資料</div>';
+  $('srTable').innerHTML = ch.length ? `<table>
+    <thead><tr><th>管道</th><th class="r">造訪</th><th class="r">會員占比</th><th class="r">互動時間</th><th class="r">看商品</th><th class="r">購物車</th><th class="r">訂單</th><th class="r">轉換率</th><th class="r">營收</th></tr></thead>
+    <tbody>${ch.map(c => `<tr>
+      <td>${esc(c.channel)}</td>
+      <td class="r num">${n(c.sessions)}</td>
+      <td class="r num">${pct(c.member_share, 0)}</td>
+      <td class="r num">${dur(c.avg_eng_sec)}</td>
+      <td class="r num">${pct(c.view_item_rate, 0)}</td>
+      <td class="r num">${pct(c.add_to_cart_rate, 1)}</td>
+      <td class="r num">${n(c.purchases)}</td>
+      <td class="r num">${pct(c.conversion_rate, 2)}</td>
+      <td class="r num">${money(c.revenue)}</td></tr>`).join('')}</tbody></table>
+    <p class="foot-note">看商品／購物車／轉換率＝該管道的造訪中，有瀏覽商品／加入購物車／完成購買的比例。訂單＝有完成購買的造訪次數（GA4 記錄），轉換率＝訂單 ÷ 造訪。</p>` : '<div class="state">沒有資料</div>';
+  srState.detail = d.detail || [];
+  srState.channels = ch.map(c => c.channel);
+  if (srState.channels.indexOf(srState.pick) < 0) srState.pick = '';
+  drawSrDetail();
+}
+const srState = { detail: [], channels: [], pick: '' };
+function drawSrDetail() {
+  const all = srState.detail, pick = srState.pick;
+  $('srChips').innerHTML = all.length ? [''].concat(srState.channels).map(c =>
+    `<button type="button" class="chip" data-ch="${esc(c)}" aria-pressed="${c === pick}">${c ? esc(c) : '全部'}</button>`).join('') : '';
+  const det = (pick ? all.filter(x => x.channel === pick) : all).slice(0, 30);
+  $('srDetail').innerHTML = det.length ? `<table>
+    <thead><tr><th>來源 source</th><th>媒介 medium</th><th>歸類管道</th><th class="r">造訪</th><th class="r">購買</th></tr></thead>
+    <tbody>${det.map(x => `<tr><td class="mono">${esc(x.source)}</td><td class="mono">${esc(x.medium)}</td><td>${esc(x.channel)}</td><td class="r num">${n(x.sessions)}</td><td class="r num">${n(x.purchases)}</td></tr>`).join('')}</tbody></table>`
+    : (all.length ? '<div class="state">這個管道沒有資料</div>' : '');
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('#srChips .chip'); if (!b) return;
+  srState.pick = b.dataset.ch || '';
+  drawSrDetail();
+});
+
+/* ====================== 個別追蹤 ====================== */
+const EV = {
+  page_view: ['瀏覽頁面', 'page'], view_item: ['查看商品', 'view'], view_item_list: ['瀏覽商品列表', 'view'],
+  select_item: ['點選商品', 'view'], add_to_cart: ['加入購物車', 'cart'], remove_from_cart: ['移出購物車', 'cart'],
+  view_cart: ['查看購物車', 'cart'], begin_checkout: ['開始結帳', 'cart'], add_shipping_info: ['填寫配送資訊', 'cart'],
+  add_payment_info: ['填寫付款資訊', 'cart'], purchase: ['完成購買', 'buy'], login: ['登入', 'user'], sign_up: ['註冊會員', 'user'],
+  view_search_results: ['站內搜尋', 'page'], search: ['站內搜尋', 'page'], click: ['點擊外部連結', 'page'],
+  scroll: ['捲動到頁尾', 'page'], session_start: ['開始造訪', 'page'], first_visit: ['第一次造訪', 'user'],
+  file_download: ['下載檔案', 'page'], form_start: ['開始填表單', 'page'], form_submit: ['送出表單', 'page'],
+  video_start: ['播放影片', 'page'], video_complete: ['看完影片', 'page'], add_to_wishlist: ['加入收藏', 'view'],
+};
+const MINOR = new Set(['session_start', 'first_visit', 'scroll', 'form_start', 'video_progress']);
+const DOT = { page: '--dot-page', view: '--dot-view', cart: '--dot-cart', buy: '--dot-buy', user: '--dot-user' };
+
+async function renderPerson() {
+  $('rmTable').innerHTML = loadingRows(5);
+  let d;
+  try { d = await load('getRecentMembers', state.site, state.start, state.end); }
+  catch (e) { $('rmTable').innerHTML = errBox(e); return; }
+  d = d || [];
+  $('rmTable').innerHTML = d.length ? `<table>
+    <thead><tr><th>會員 ID</th><th>最後活動</th><th class="r">造訪</th><th class="r">瀏覽</th><th class="r">加購</th><th class="r">購買</th><th class="r">裝置數</th></tr></thead>
+    <tbody>${d.map(m => `<tr>
+      <td><button class="link mono" data-id="${esc(m.user_id)}">${esc(m.user_id)}</button></td>
+      <td class="num">${esc(m.last_seen)}</td>
+      <td class="r num">${n(m.sessions)}</td><td class="r num">${n(m.pageviews)}</td>
+      <td class="r num">${n(m.add_to_cart)}</td><td class="r num">${n(m.purchases)}</td>
+      <td class="r num">${n(m.devices)}</td></tr>`).join('')}</tbody></table>` : '<div class="state">這段期間沒有登入會員的紀錄</div>';
+}
+$('rmTable').addEventListener('click', e => {
+  const b = e.target.closest('[data-id]'); if (!b) return;
+  $('pid').value = b.dataset.id; lookup(); window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+$('pidGo').addEventListener('click', lookup);
+$('pid').addEventListener('keydown', e => { if (e.key === 'Enter') lookup(); });
+
+let tl = null, showMinor = false;
+async function lookup() {
+  const id = $('pid').value.trim();
+  if (!id) return;
+  $('tlOut').innerHTML = `<div class="card">${loadingRows(6)}</div>`;
+  try { tl = await load('getTimeline', state.site, id, state.start, state.end); }
+  catch (e) { $('tlOut').innerHTML = errBox(e); return; }
+  drawTimeline();
+}
+function drawTimeline() {
+  const evs = (tl && tl.events) || [];
+  if (!evs.length) {
+    $('tlOut').innerHTML = `<div class="card"><div class="state">在 ${esc(state.start)} ~ ${esc(state.end)} 找不到「${esc(tl ? tl.id : '')}」的紀錄。<br>可以把日期區間拉長，或確認 ID 是否正確。</div></div>`;
+    return;
+  }
+  // 依裝置 + 工作階段分組
+  const sessions = [];
+  const idx = {};
+  evs.forEach(e => {
+    const k = e.pid + '.' + (e.sid || 'x');
+    if (!idx[k]) { idx[k] = { key: k, pid: e.pid, events: [] }; sessions.push(idx[k]); }
+    idx[k].events.push(e);
+  });
+  sessions.sort((a, b) => (a.events[0].t < b.events[0].t ? 1 : -1)); // 最新的在上面
+
+  const devices = new Set(evs.map(e => e.pid));
+  const members = new Set(evs.map(e => e.uid).filter(Boolean));
+  const pv = evs.filter(e => e.ev === 'page_view').length;
+  const buys = evs.filter(e => e.ev === 'purchase');
+  const rev = buys.reduce((a, b) => a + (Number(b.revenue) || 0), 0);
+  const summary = [
+    ['造訪次數', n(sessions.length)],
+    ['瀏覽頁數', n(pv)],
+    ['使用裝置', n(devices.size) + ' 台'],
+    ['購買', n(buys.length) + ' 筆' + (rev ? ' · ' + money(rev) : '')],
+    ['首次 / 最後', esc(evs[0].t.slice(5, 16)) + '<br>' + esc(evs[evs.length - 1].t.slice(5, 16))],
+  ];
+  const memberNote = members.size > 1
+    ? `<p class="foot-note">注意：這些裝置上出現了 ${members.size} 個不同的會員 ID（例如共用電腦），每筆事件都有標示是哪個會員。</p>` : '';
+
+  $('tlOut').innerHTML = `
+    <div class="stack">
+      <div class="summary">${summary.map(s => `<div class="card kpi"><div class="label">${s[0]}</div><div class="value num">${s[1]}</div></div>`).join('')}</div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+          <div><h2>瀏覽時間軸</h2><p class="hint" style="margin:0">${esc(tl.id)} · 最新的造訪在最上面${evs.length >= 3000 ? ' · 只顯示前 3,000 筆事件，請縮短日期區間' : ''}</p></div>
+          <label class="toggle"><input type="checkbox" id="minorToggle" ${showMinor ? 'checked' : ''}> 顯示次要事件（捲動、開始造訪…）</label>
+        </div>
+        ${memberNote}
+        ${sessions.map(drawSession).join('')}
+      </div>
+    </div>`;
+  $('minorToggle').addEventListener('change', e => { showMinor = e.target.checked; drawTimeline(); });
+}
+function drawSession(s) {
+  const e0 = s.events[0], eN = s.events[s.events.length - 1];
+  const secs = (new Date(eN.t.replace(' ', 'T')) - new Date(e0.t.replace(' ', 'T'))) / 1000;
+  const loggedIn = s.events.some(e => e.uid);
+  const src = s.events.find(e => e.src);
+  const pages = s.events.filter(e => e.ev === 'page_view').length;
+  const list = s.events.filter(e => showMinor || !MINOR.has(e.ev));
+  return `<div class="session">
+    <div class="s-head">
+      <span class="when num">${esc(e0.t.slice(0, 16))}</span>
+      <span class="meta">${esc(DEVICE[e0.dev] || e0.dev || '')} · ${esc([e0.os, e0.browser].filter(Boolean).join(' / '))}${e0.city ? ' · ' + esc(e0.city) : ''}</span>
+      <span class="meta">停留 ${dur(secs)} · ${pages} 頁</span>
+      <span class="meta">來源：${src ? esc(src.src + (src.med ? ' / ' + src.med : '')) : '直接或未知'}</span>
+      ${loggedIn ? '<span class="tag member">已登入</span>' : '<span class="tag">匿名</span>'}
+      <span class="tag mono" title="裝置 ID">${esc(s.pid)}</span>
+    </div>
+    <ul class="events">${list.map(drawEvent).join('')}</ul>
+  </div>`;
+}
+function drawEvent(e) {
+  const def = EV[e.ev] || [e.ev, 'page'];
+  let main = '', sub = '';
+  if (e.items) main = e.items;
+  else if (e.search) main = '搜尋「' + e.search + '」';
+  else if (e.ev === 'click' && e.link) main = e.link;
+  else main = e.title || '';
+  if (e.url) { try { const u = new URL(e.url); sub = decodeSafe(u.pathname + u.search); } catch (x) { sub = e.url; } }
+  if (e.ev === 'purchase' && e.revenue) main = (main ? main + ' · ' : '') + money(e.revenue);
+  return `<li>
+    <span class="time num">${esc(e.t.slice(11))}</span>
+    <span class="dot" style="background:var(${DOT[def[1]]})"></span>
+    <span class="evn">${esc(def[0])}</span>
+    <span class="det"><div class="t" title="${esc(main)}">${esc(main)}</div>${sub ? `<div class="p" title="${esc(e.url)}">${esc(sub)}</div>` : ''}</span>
+  </li>`;
+}
+
+/* 數字太長的 KPI 自動縮小字級 */
+function fitKpis(root) {
+  (root || document).querySelectorAll('.kpi .value').forEach(el => el.classList.toggle('long', el.textContent.trim().length >= 10));
+}
+
+/* ====================== 營收與回購 ====================== */
+let revChart;
+const retCache = {};
+function delta(cur, prev) {
+  if (prev == null || !isFinite(prev) || prev === 0 || cur == null) return '<span class="dl">上期無資料</span>';
+  const r = (cur - prev) / Math.abs(prev);
+  const up = r >= 0;
+  return `<span class="dl"><span class="arrow ${up ? 'up' : 'down'}">${up ? '▲' : '▼'}</span>${(Math.abs(r) * 100).toFixed(1)}% vs 上期</span>`;
+}
+async function renderRevenue() {
+  $('rvKpis').innerHTML = Array.from({ length: 6 }, () => `<div class="card kpi">${loadingRows(2)}</div>`).join('');
+  ['rvSummary', 'rvProducts', 'rvPromos', 'rvCoupons'].forEach(id => ($(id).innerHTML = loadingRows(4)));
+  let d;
+  try { d = await load('getRevenue', state.site, state.start, state.end); }
+  catch (e) {
+    $('rvKpis').innerHTML = `<div style="grid-column:1/-1">${errBox(e)}</div>`;
+    ['rvSummary', 'rvProducts', 'rvPromos', 'rvCoupons'].forEach(id => ($(id).innerHTML = ''));
+    drawRevChart([]); return;
+  }
+  d = d || {};
+  const c = d.cur || {}, p = d.prev || {};
+  const aov = div(c.revenue, c.orders), paov = div(p.revenue, p.orders);
+  const retShare = div(c.returning_revenue, c.revenue), pRetShare = div(p.returning_revenue, p.revenue);
+  const kpis = [
+    ['營收', money(c.revenue), delta(c.revenue, p.revenue)],
+    ['訂單數', n(c.orders), delta(c.orders, p.orders)],
+    ['客單價', money(aov), delta(aov, paov)],
+    ['購買會員', n(c.buyers), delta(c.buyers, p.buyers)],
+    ['新客', n(c.new_customers), delta(c.new_customers, p.new_customers)],
+    ['回購營收占比', pct(retShare), pRetShare == null ? '<span class="dl">上期無資料</span>' : `<span class="dl">上期 ${pct(pRetShare)}</span>`],
+  ];
+  $('rvKpis').innerHTML = kpis.map(k => `<div class="card kpi"><div class="label">${k[0]}</div><div class="value num">${k[1]}</div><div class="foot num">${k[2]}</div></div>`).join('');
+  fitKpis($('rvKpis'));
+
+  const disc = div(c.discount, c.subtotal);
+  $('rvSummary').innerHTML = `
+    <div class="mini-stats">
+      <div><span>折扣率</span><b class="num">${pct(disc)}</b><small>折扣 ÷ 商品原價小計</small></div>
+      <div><span>新客營收</span><b class="num">${money(c.new_revenue)}</b><small>首購訂單（含訪客結帳）</small></div>
+      <div><span>回購營收</span><b class="num">${money(c.returning_revenue)}</b><small>第二筆以後，或舊系統就買過</small></div>
+      <div><span>訪客結帳</span><b class="num">${n(c.guest_orders)} 筆</b><small>沒有登入會員就下單</small></div>
+    </div>
+    <p class="foot-note">營收＝實付金額（已扣折扣、購物金、點數），排除已取消訂單。上期＝緊接在前、同樣天數的期間。</p>`;
+
+  drawRevChart(d.monthly || []);
+
+  const prods = d.products || [];
+  const maxRev = Math.max(1, ...prods.map(x => x.revenue || 0));
+  $('rvProducts').innerHTML = prods.length ? `<table>
+    <thead><tr><th class="rank">#</th><th>商品</th><th>營收（折扣後）</th><th class="r">件數</th><th class="r">購買人數</th><th class="r">新客訂單占比</th></tr></thead>
+    <tbody>${prods.map((x, i) => `<tr><td class="rank num">${i + 1}</td>
+      <td class="cell-title"><div class="t" title="${esc(x.title)}">${esc(x.title || '')}</div><div class="p">${esc(x.sku || '')}</div></td>
+      <td><div class="inline-bar"><span class="track"><span class="fill" style="display:block;width:${(x.revenue / maxRev) * 100}%"></span></span><span class="num r">${money(x.revenue)}</span></div></td>
+      <td class="r num">${n(x.qty)}</td><td class="r num">${n(x.buyers)}</td><td class="r num">${pct(x.new_share, 0)}</td></tr>`).join('')}</tbody></table>
+    <p class="foot-note">營收＝折扣後金額：把每張訂單的實付金額，依各品項原價小計的比例分攤到商品上，加總會等於實付營收。</p>` : '<div class="state">這段期間沒有訂單</div>';
+
+  renderPromos();
+  renderRetention();
+}
+
+function drawRevChart(rows) {
+  if (typeof Chart === 'undefined') return;
+  if (revChart) revChart.destroy();
+  const surface = cssVar('--surface-1');
+  revChart = new Chart($('revChart'), {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => r.month.replace('-', '/')),
+      datasets: [
+        { label: '回購營收', data: rows.map(r => r.returning_revenue), backgroundColor: cssVar('--series-1'), borderSkipped: false, maxBarThickness: 40 },
+        { label: '新客營收', data: rows.map(r => r.new_revenue), backgroundColor: cssVar('--series-2'), borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, borderColor: surface, borderWidth: { bottom: 2 }, maxBarThickness: 40 },
+      ],
+    },
+    options: {
+      maintainAspectRatio: false, animation: { duration: 300 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: cssVar('--text-primary'), titleColor: surface, bodyColor: surface, footerColor: surface, padding: 10, boxPadding: 4,
+          callbacks: {
+            label: it => it.dataset.label + '：' + money(it.raw),
+            footer: items => { const r = rows[items[0].dataIndex]; return '合計 ' + money(r.revenue) + ' · ' + n(r.orders) + ' 筆 · 客單 ' + money(div(r.revenue, r.orders)) + ' · 新客 ' + n(r.new_customers) + ' 人'; },
+          },
+        },
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { color: cssVar('--text-muted'), maxRotation: 0, autoSkipPadding: 8 }, border: { color: cssVar('--border') } },
+        y: { stacked: true, beginAtZero: true, grid: { color: cssVar('--grid') }, border: { display: false },
+             ticks: { color: cssVar('--text-muted'), callback: v => v >= 10000 ? (v / 10000).toLocaleString('zh-TW') + ' 萬' : v } },
+      },
+    },
+  });
+}
+
+async function renderPromos() {
+  $('rvPromos').innerHTML = loadingRows(4); $('rvCoupons').innerHTML = loadingRows(3);
+  let d;
+  try { d = await load('getPromos', state.site, state.start, state.end); }
+  catch (e) { $('rvPromos').innerHTML = errBox(e); $('rvCoupons').innerHTML = ''; return; }
+  d = d || {};
+  const promoTable = (rows, label, dlabel) => rows.length ? `<table>
+    <thead><tr><th>${label}</th><th class="r">訂單</th><th class="r">訂單實付</th><th class="r">${dlabel}</th><th class="r">新客占比</th></tr></thead>
+    <tbody>${rows.map(x => `<tr><td class="cell-title"><div class="t" title="${esc(x.name)}">${esc(x.name)}</div></td>
+      <td class="r num">${n(x.orders)}</td><td class="r num">${money(x.revenue)}</td><td class="r num">${money(x.discount)}</td><td class="r num">${pct(x.new_share, 0)}</td></tr>`).join('')}</tbody></table>`
+    : '<div class="state">這段期間沒有資料（優惠明細需要先完成訂單重新同步）</div>';
+  $('rvPromos').innerHTML = promoTable(d.promotions || [], '優惠活動', '活動折扣') +
+    '<p class="foot-note">活動折扣＝該活動本身折掉的金額。一筆訂單可能同時套用多個活動，訂單與實付會在各活動重複計算。</p>';
+  $('rvCoupons').innerHTML = promoTable(d.coupons || [], '折扣碼', '折扣碼折扣') +
+    '<p class="foot-note">折扣碼折扣＝該折扣碼本身折掉的金額，不含同一張訂單的其他優惠。</p>';
+}
+
+async function renderRetention() {
+  $('rvCohort').innerHTML = loadingRows(6); $('rvRetSum').innerHTML = loadingRows(3); $('rvFirst').innerHTML = loadingRows(4);
+  let d = retCache[state.site];
+  if (!d) {
+    try { d = await load('getRetention', state.site); retCache[state.site] = d; }
+    catch (e) { $('rvCohort').innerHTML = errBox(e); $('rvRetSum').innerHTML = ''; $('rvFirst').innerHTML = ''; return; }
+  }
+  d = d || {};
+  const s = d.summary || {};
+  $('rvRetSum').innerHTML = `
+    <div class="mini-stats">
+      <div><span>90 天內回購率</span><b class="num">${pct(div(s.repurchased_90, s.customers))}</b><small>首購後 90 天內再買一次</small></div>
+      <div><span>至今有回購</span><b class="num">${pct(div(s.repurchased_any, s.customers))}</b><small>首購後任何時間再買</small></div>
+      <div><span>第二次購買間隔</span><b class="num">${s.median_gap != null ? n(s.median_gap) + ' 天' : '–'}</b><small>中位數（有回購的人）</small></div>
+      <div><span>樣本</span><b class="num">${n(s.customers)} 人</b><small>過去 15 個月內首購、且已滿 90 天</small></div>
+    </div>
+    <p class="foot-note">訂單資料自 ${esc(d.data_since || '')} 起（SHOPLINE 之前的舊系統訂單不含）。之前就買過的老客不會被算成新客。</p>`;
+
+  const cohorts = d.cohorts || [];
+  const maxK = 12;
+  const now = new Date();
+  const thisMonth = now.getFullYear() * 12 + now.getMonth();
+  $('rvCohort').innerHTML = cohorts.length ? `<table class="cohort">
+    <thead><tr><th>首購月份</th><th class="r">新客</th>${Array.from({ length: maxK }, (_, i) => `<th class="r">+${i + 1}</th>`).join('')}</tr></thead>
+    <tbody>${cohorts.map(c => {
+      const [y, m] = c.cohort.split('-').map(Number);
+      const age = thisMonth - (y * 12 + m - 1);
+      const map = {}; (c.ret || []).forEach(x => (map[x.k] = x.n));
+      return `<tr><td class="num">${esc(c.cohort.replace('-', '/'))}</td><td class="r num">${n(c.size)}</td>${Array.from({ length: maxK }, (_, i) => {
+        const k = i + 1;
+        if (k > age) return '<td class="hm empty"></td>';
+        const v = div(map[k] || 0, c.size) || 0;
+        const a = Math.min(1, v / 0.15);   // 15% 以上就是最深色
+        return `<td class="hm num" style="--a:${(a * 100).toFixed(0)}%" data-dark="${a > 0.55}" title="${esc(c.cohort)} 首購的 ${n(c.size)} 位新客中，${n(map[k] || 0)} 位在第 ${k} 個月回購">${(v * 100).toFixed(1)}%</td>`;
+      }).join('')}</tr>`;
+    }).join('')}</tbody></table>` : '<div class="state">還沒有足夠的資料</div>';
+
+  const fp = d.first_products || [];
+  $('rvFirst').innerHTML = fp.length ? `<table>
+    <thead><tr><th>首購商品</th><th class="r">帶進新客</th><th class="r">90 天回購率</th></tr></thead>
+    <tbody>${fp.map(x => `<tr><td class="cell-title"><div class="t" title="${esc(x.title)}">${esc(x.title || '')}</div></td>
+      <td class="r num">${n(x.new_customers)}</td><td class="r num">${pct(div(x.repurchased_90, x.new_customers))}</td></tr>`).join('')}</tbody></table>
+    <p class="foot-note">新客第一筆訂單裡有這個商品的人數，以及他們 90 天內再回來買的比例（至少 5 位新客才列出）。</p>`
+    : '<div class="state">還沒有足夠的資料</div>';
+}
+
+/* ====================== 分眾名單 ====================== */
+const seg = { opts: {}, site: null, picks: { tiers: new Set(), genders: new Set(), ageBands: new Set(), sources: new Set(), skinTypes: new Set() }, last: null };
+
+async function renderSegmentForm() {
+  if (seg.site === state.site && seg.opts[state.site]) return;   // 表單已經建好，不重設使用者的條件
+  if (seg.site && seg.site !== state.site) { Object.values(seg.picks).forEach(x => x.clear()); $('segOut').innerHTML = ''; }
+  seg.site = state.site;
+  $('segMemberForm').innerHTML = loadingRows(5);
+  let o;
+  try { o = seg.opts[state.site] || await load('getSegmentOptions', state.site); }
+  catch (e) { $('segMemberForm').innerHTML = errBox(e); return; }
+  seg.opts[state.site] = o;
+
+  $('segConcern').innerHTML = '<option value="">（不使用）</option>' +
+    Object.keys(o.concerns || {}).map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
+  $('segProducts').innerHTML = (o.products || []).map(p => `<option value="${esc(p.v)}">`).join('');
+  $('segPromoHint').textContent = '標題或網址含：' + (o.promoKeywords || []).slice(0, 12).join('、') + ' …';
+
+  if (!o.membersReady) {
+    $('segMemberForm').innerHTML = `<div class="error"><b>還沒有會員資料：</b>請先把 members_for_bigquery.csv 上傳到 BigQuery 的 crm.members。<br><span class="mono" style="font-size:11px">${esc(o.membersError || '')}</span></div>`;
+    return;
+  }
+  const chipGroup = (key, items) => `<div class="chips tight" data-group="${key}">${(items || []).map(x =>
+    `<button class="chip" aria-pressed="${seg.picks[key].has(x.v)}" data-v="${esc(x.v)}">${esc(x.v)}<small>${n(x.n)}</small></button>`).join('')}</div>`;
+  $('segMemberForm').innerHTML = `
+    <div class="form-grid">
+      <label>會員級別</label>${chipGroup('tiers', o.tiers)}
+      <label>性別</label>${chipGroup('genders', o.genders)}
+      <label>年齡層</label>${chipGroup('ageBands', o.ageBands)}
+      <label>註冊來源</label>${chipGroup('sources', o.sources)}
+      ${(o.skinTypes || []).length ? `<label>膚質</label>${chipGroup('skinTypes', o.skinTypes)}` : ''}
+      <label for="segTag">標籤包含</label>
+      <div class="row"><input class="ctl wide" id="segTag" list="segTags" placeholder="例：試用包"><datalist id="segTags">${(o.tags || []).map(t => `<option value="${esc(t.v)}">`).join('')}</datalist></div>
+      <label>訂單數</label>
+      <div class="row"><input class="ctl sm num" type="number" min="0" id="segMinOrders" placeholder="最少"> – <input class="ctl sm num" type="number" min="0" id="segMaxOrders" placeholder="最多"> 筆</div>
+      <label>累積消費</label>
+      <div class="row">NT$ <input class="ctl sm num" type="number" min="0" id="segMinSpent" placeholder="最少"> – <input class="ctl sm num" type="number" min="0" id="segMaxSpent" placeholder="最多"></div>
+      <label>LINE</label>
+      <div class="stack" style="--gap:6px">
+        <label class="toggle"><input type="checkbox" id="segLineOnly"> 只要有 LINE ID 的會員（可直接匯入 LINE 推播工具）</label>
+        <label class="toggle"><input type="checkbox" id="segLinePromo"> 只要在 SHOPLINE 勾選「接受 LINE 優惠宣傳」的會員</label>
+      </div>
+    </div>
+    <p class="foot-note">共 ${n(o.total)} 位顧客。小提醒：SHOPLINE 的「接受 LINE 優惠宣傳」勾選的人很少，加了會讓名單變很小；LINE 好友本身就能收到官方帳號推播。</p>`;
+}
+
+$('segMemberForm').addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if (!b) return;
+  const key = b.parentElement.dataset.group; const v = b.dataset.v;
+  const set = seg.picks[key];
+  if (set.has(v)) set.delete(v); else set.add(v);
+  b.setAttribute('aria-pressed', set.has(v));
+});
+
+$('segConcern').addEventListener('change', () => {
+  const o = seg.opts[state.site] || {};
+  const k = $('segConcern').value;
+  if (k && o.concerns && o.concerns[k]) $('segKw').value = o.concerns[k].join(', ');
+});
+
+document.querySelector('.presets').addEventListener('click', e => {
+  const b = e.target.closest('[data-preset]'); if (!b) return;
+  const p = b.dataset.preset;
+  const val = (id, v) => { const el = $(id); if (el) { if (el.type === 'checkbox') el.checked = v; else el.value = v; } };
+  // 先清掉行為條件
+  val('segConcern', ''); val('segKw', ''); val('segMinHits', 1); val('segExcludeBought', false); val('segPromo', 0); val('segCart', false);
+  if (p === 'reset') {
+    Object.values(seg.picks).forEach(s => s.clear());
+    document.querySelectorAll('#segMemberForm .chip').forEach(c => c.setAttribute('aria-pressed', 'false'));
+    ['segTag', 'segMinOrders', 'segMaxOrders', 'segMinSpent', 'segMaxSpent'].forEach(id => val(id, ''));
+    ['segLineOnly', 'segLinePromo'].forEach(id => val(id, false));
+    $('segOut').innerHTML = '';
+    return;
+  }
+  if (p === 'promo') { val('segDays', 30); val('segPromo', 2); }
+  if (p === 'product') { val('segDays', 30); val('segMinHits', 2); val('segExcludeBought', true); $('segKw').focus(); }
+  if (p === 'concern') { val('segDays', 60); val('segMinHits', 2); $('segConcern').focus(); }
+  if (p === 'cart') { val('segDays', 14); val('segCart', true); }
+  $('segRun').scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+function segFilters() {
+  const v = id => ($(id) ? $(id).value : '');
+  const c = id => ($(id) ? $(id).checked : false);
+  return {
+    tiers: [...seg.picks.tiers], genders: [...seg.picks.genders], ageBands: [...seg.picks.ageBands], sources: [...seg.picks.sources], skinTypes: [...seg.picks.skinTypes],
+    tag: v('segTag'), minOrders: v('segMinOrders'), maxOrders: v('segMaxOrders'), minSpent: v('segMinSpent'), maxSpent: v('segMaxSpent'),
+    lineOnly: c('segLineOnly'), linePromoOnly: c('segLinePromo'),
+    days: Number(v('segDays')) || 30,
+    keywords: v('segKw'), minHits: Number(v('segMinHits')) || 1, excludeBought: c('segExcludeBought'),
+    promoMinHits: Number(v('segPromo')) || 0, cartAbandon: c('segCart'),
+  };
+}
+function segDescribe(f) {
+  const out = [];
+  if (f.tiers.length) out.push('級別：' + f.tiers.join('／'));
+  if (f.genders.length) out.push('性別：' + f.genders.join('／'));
+  if (f.ageBands.length) out.push('年齡：' + f.ageBands.join('／'));
+  if (f.sources.length) out.push('註冊來源：' + f.sources.join('／'));
+  if (f.skinTypes.length) out.push('膚質：' + f.skinTypes.join('／'));
+  if (f.tag) out.push('標籤含「' + f.tag + '」');
+  if (f.minOrders || f.maxOrders) out.push('訂單 ' + (f.minOrders || 0) + '–' + (f.maxOrders || '∞') + ' 筆');
+  if (f.minSpent || f.maxSpent) out.push('消費 NT$' + (f.minSpent || 0) + '–' + (f.maxSpent || '∞'));
+  if (f.keywords) out.push('最近 ' + f.days + ' 天對「' + f.keywords + '」互動 ≥ ' + f.minHits + ' 次' + (f.excludeBought ? '（未購買）' : ''));
+  if (f.promoMinHits) out.push('最近 ' + f.days + ' 天瀏覽優惠頁 ≥ ' + f.promoMinHits + ' 次');
+  if (f.cartAbandon) out.push('最近 ' + f.days + ' 天加購物車、期間內沒有訂單');
+  if (f.lineOnly) out.push('有 LINE ID');
+  if (f.linePromoOnly) out.push('同意 LINE 優惠宣傳');
+  return out.length ? out.join(' · ') : '全部顧客（沒有設定條件）';
+}
+
+$('segRun').addEventListener('click', async () => {
+  const f = segFilters();
+  $('segOut').innerHTML = `<div class="card">${loadingRows(5)}</div>`;
+  $('segRun').disabled = true;
+  let r;
+  try { r = await load('getSegment', state.site, f); }
+  catch (e) { $('segOut').innerHTML = errBox(e); return; }
+  finally { $('segRun').disabled = false; }
+  seg.last = { f, r, desc: segDescribe(f) };
+  drawSegment();
+});
+
+function drawSegment() {
+  const { f, r, desc } = seg.last;
+  const rows = r.rows || [];
+  const behaviorUsed = !!(f.keywords || f.promoMinHits || f.cartAbandon);
+  const notes = [];
+  if (!r.lineReady) notes.push('還沒有上傳 LINE 對照表（crm.line_map），名單裡不會有 LINE UID。');
+  if (behaviorUsed) notes.push('瀏覽行為條件只會找到「能辨識身分」的會員（登入過，或從帶會員 ID 的推播連結進站），所以人數會偏少；推播連結帶入會員 ID 之後會越來越完整。');
+  const preview = rows.slice(0, 50);
+  $('segOut').innerHTML = `
+    <div class="card">
+      <div class="result-head">
+        <div><div class="label hint" style="margin:0">符合條件</div><div class="big-num num">${n(r.total)} <span style="font-size:16px;font-weight:500">人</span></div></div>
+        <div class="meta num">有 LINE UID：<b>${n(r.with_line)}</b> 人<br>期間內有瀏覽紀錄：<b>${n(r.with_behavior)}</b> 人</div>
+        <div class="actions">
+          <button class="btn" id="segDlFull" ${rows.length ? '' : 'disabled'}>下載完整名單 CSV</button>
+          <button class="btn ghost" id="segDlLine" ${r.with_line ? '' : 'disabled'}>下載 LINE UID（推播工具用）</button>
+          <button class="btn ghost" id="segCopy" ${rows.length ? '' : 'disabled'}>複製顧客 ID</button>
+        </div>
+      </div>
+      <p class="hint" style="margin:0 0 10px">條件：${esc(desc)}</p>
+      ${notes.map(x => `<div class="note" style="margin-bottom:8px">${esc(x)}</div>`).join('')}
+      <div id="segCopyBox"></div>
+      ${rows.length ? `<div class="tbl-wrap scroll-y"><table>
+        <thead><tr><th>顧客 ID</th><th>LINE</th><th>級別</th><th class="r">訂單</th><th class="r">累積消費</th><th>性別</th><th>年齡</th><th>註冊來源</th><th>膚質</th>
+          <th class="r">瀏覽</th><th class="r">興趣互動</th><th class="r">優惠頁</th><th class="r">加購</th><th class="r">購買</th></tr></thead>
+        <tbody>${preview.map(x => `<tr>
+          <td class="mono">${esc(x.customer_id)}</td><td>${x.line_uid ? '✓' : ''}</td><td>${esc(x.tier || '')}</td>
+          <td class="r num">${n(x.orders)}</td><td class="r num">${money(x.total_spent)}</td><td>${esc(x.gender || '')}</td><td>${esc(x.age_band || '')}</td>
+          <td>${esc(x.signup_source || '')}</td><td>${esc(x.skin_type || '')}</td><td class="r num">${n(x.pageviews)}</td><td class="r num">${n(x.kw_hits)}</td>
+          <td class="r num">${n(x.promo_hits)}</td><td class="r num">${n(x.carts)}</td><td class="r num">${n(x.purchases)}</td></tr>`).join('')}</tbody></table></div>
+        ${rows.length > preview.length ? `<p class="foot-note">只預覽前 50 筆，下載 CSV 可以拿到全部 ${n(rows.length)} 筆。</p>` : ''}`
+      : '<div class="state">沒有符合條件的會員，試著放寬條件或拉長行為期間。</div>'}
+    </div>`;
+  if (rows.length) {
+    $('segDlFull').onclick = () => downloadCsv(segFileName('名單'), ['customer_id', 'line_uid', 'tier', 'orders', 'total_spent', 'gender', 'age_band', 'signup_source', 'tags', 'skin_type', 'pageviews', 'kw_hits', 'promo_hits', 'carts', 'purchases'], rows);
+    $('segCopy').onclick = () => copyText(rows.map(x => x.customer_id).join('\n'));
+  }
+  if (r.with_line) $('segDlLine').onclick = () => downloadCsv(segFileName('LINE_UID'), ['line_uid'], rows.filter(x => x.line_uid));
+}
+function segFileName(kind) {
+  const d = new Date(); const z = x => String(x).padStart(2, '0');
+  return `分眾${kind}_${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}.csv`;
+}
+function csvCell(v) {
+  if (v == null) return '';
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function downloadCsv(name, cols, rows) {
+  const text = cols.join(',') + '\n' + rows.map(r => cols.map(c => csvCell(r[c])).join(',')).join('\n');
+  const blob = new Blob(['﻿' + text], { type: 'text/csv;charset=utf-8' });   // 加 BOM，Excel 打開中文才不會亂碼
+  try {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  } catch (e) {
+    showCopyBox(text, '瀏覽器擋下了下載，請把下面內容複製到記事本，存成 .csv 檔：');
+  }
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); toast('已複製 ' + n(text.split('\n').length) + ' 筆顧客 ID'); }
+  catch (e) { showCopyBox(text, '請按 Ctrl + C 複製下面的內容：'); }
+}
+function showCopyBox(text, msg) {
+  $('segCopyBox').innerHTML = `<div class="note" style="margin-bottom:8px">${esc(msg)}</div><textarea class="ctl" readonly>${esc(text)}</textarea>`;
+  const ta = $('segCopyBox').querySelector('textarea'); ta.focus(); ta.select();
+}
+function toast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--text-primary);color:var(--surface-1);padding:8px 14px;border-radius:8px;font-size:13px;z-index:50';
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2200);
+}
+
+/* ====================== 初始化 ====================== */
+document.querySelector('nav.tabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-tab]'); if (b) showTab(b.dataset.tab);
+});
+$('preset').addEventListener('change', () => { applyPreset(); if ($('preset').value !== 'custom') { readFilters(); refreshTab(); } });
+['start', 'end'].forEach(id => $(id).addEventListener('change', () => ($('preset').value = 'custom')));
+$('apply').addEventListener('click', () => { readFilters(); refreshTab(); });
+$('site').addEventListener('change', () => { readFilters(); refreshTab(); });
+
+(async function init() {
+  $('mockBadge').hidden = !!IS_GAS;
+  applyPreset();
+  let cfg;
+  try { cfg = await load('getConfig'); }
+  catch (e) { document.querySelector('main').innerHTML = errBox(e); return; }
+  $('site').innerHTML = cfg.sites.map(s => `<option value="${esc(s.key)}">${esc(s.name)}${s.ready ? '' : '（未設定）'}</option>`).join('');
+  $('site').hidden = cfg.sites.length < 2;
+  $('who').textContent = cfg.user || '';
+  readFilters();
+  let tab = 'overview';
+  try { tab = localStorage.getItem('ga-dash-tab') || 'overview'; } catch (e) {}
+  if (!document.getElementById('tab-' + tab)) tab = 'overview';
+  showTab(tab);
+})();
+
+/* ====================== 模擬資料（只在非 Apps Script 環境下使用） ====================== */
+const MOCK = (() => {
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const ri = (a, b) => Math.floor(a + rnd() * (b - a + 1));
+  const days = (s, e) => { const out = []; const d = new Date(s); const E = new Date(e); while (d <= E) { out.push(ymd(d)); d.setDate(d.getDate() + 1); } return out; };
+  const products = ['淨化洗髮精 500ml', '保濕潤髮乳 500ml', '頭皮淨化精華 50ml', '修護髮膜 200ml', '香氛擴香瓶 150ml', '洗潤旅行組', '保濕潤髮乳 30ml', '頭皮按摩梳', '沐浴露 500ml', '護手霜 50ml'];
+  return {
+    getConfig: () => ({ sites: [{ key: 'brand_a', name: 'DEMO SKIN 保養', ready: true }, { key: 'brand_b', name: 'DEMO HAIR 洗護', ready: true }], user: 'preview@example.com' }),
+    getOverview: (site, s, e) => {
+      seed = 11;
+      const daily = days(s, e).map((date, i) => {
+        const wk = new Date(date).getDay(); const base = wk === 0 || wk === 6 ? 520 : 430;
+        const users = base + ri(-60, 90); const md = Math.round(users * (0.24 + rnd() * 0.06));
+        return { date, users, members: md - ri(0, 8), member_devices: md, anon_devices: users - md, sessions: Math.round(users * 1.32), pageviews: Math.round(users * 4.1) };
+      });
+      const sum = k => daily.reduce((a, b) => a + b[k], 0);
+      const users = Math.round(sum('users') * 0.82), md = Math.round(sum('member_devices') * 0.7);
+      return {
+        totals: { users, members: Math.round(md * 0.9), member_devices: md, sessions: sum('sessions'), pageviews: sum('pageviews'), eng_sec: sum('sessions') * 74, purchases: Math.round(sum('sessions') * 0.012), revenue: sum('sessions') * 21 },
+        daily,
+        devices: [{ cat: 'mobile', users: Math.round(users * 0.78) }, { cat: 'desktop', users: Math.round(users * 0.19) }, { cat: 'tablet', users: Math.round(users * 0.03) }],
+      };
+    },
+    getContent: () => {
+      seed = 21;
+      const pages = [['/', 'DEMO HAIR 官方網站'], ['/products/purifying-shampoo', '淨化洗髮精 500ml'], ['/categories/hair-care', '頭髮護理'], ['/promotions/1111', '雙 11 限定優惠'], ['/products/moisturizing-conditioner', '保濕潤髮乳 500ml'], ['/cart', '購物車'], ['/users/sign_in', '會員登入'], ['/products/scalp-serum', '頭皮淨化精華 50ml'], ['/pages/about', '品牌故事'], ['/categories/home-fragrance', '居家香氛'], ['/products/hair-mask', '修護髮膜 200ml'], ['/checkout', '結帳'], ['/pages/member-benefits', '會員權益'], ['/blog/scalp-care-guide', '頭皮保養指南']];
+      let pv = 5200;
+      return {
+        sales_source: 'shopline', sales_through: '20261110',
+        pages: pages.map(p => { pv = Math.round(pv * (0.55 + rnd() * 0.35)) + 40; return { path: p[0], title: p[1], pageviews: pv, users: Math.round(pv * 0.72), avg_sec: 12 + ri(0, 90) }; }).sort((a, b) => b.pageviews - a.pageviews),
+        products: products.map((name, i) => { const v = Math.round(1800 / (i + 1.2)) + ri(10, 60); const a = Math.round(v * (0.05 + rnd() * 0.12)); const q = Math.round(a * (0.3 + rnd() * 0.3)); return { item_id: 'SKU' + (1001 + i), name, views: v, viewers: Math.round(v * 0.8), add_to_cart: a, purchased: q, revenue: q * ri(380, 1280) }; }),
+      };
+    },
+    getFunnel: () => {
+      seed = 31;
+      const mk = (seg, s, v, a, c, p) => ({ seg, sessions: s, view_item: Math.round(s * v), add_to_cart: Math.round(s * a), begin_checkout: Math.round(s * c), purchase: Math.round(s * p) });
+      return [mk('全部', 4120, .46, .082, .041, .019), mk('會員', 1180, .58, .15, .088, .047), mk('匿名', 2940, .41, .055, .022, .008), mk('手機', 3240, .44, .074, .036, .016), mk('電腦', 760, .53, .11, .062, .031), mk('平板', 120, .47, .08, .04, .017)];
+    },
+    getSources: () => {
+      const ch = [['直接造訪', 1340, .31, 3.6, 66, .44, .07, .018], ['LINE', 980, .52, 4.4, 92, .57, .12, .034], ['Facebook / IG', 760, .12, 2.6, 41, .38, .04, .006], ['Google 搜尋', 640, .22, 4.9, 101, .51, .09, .021], ['Google 廣告', 280, .09, 3.1, 55, .62, .07, .014], ['其他', 120, .18, 3.0, 48, .33, .05, .008]];
+      return {
+        channels: ch.map(c => ({ channel: c[0], sessions: c[1], users: Math.round(c[1] * 0.8), member_share: c[2], pages_per_session: c[3], avg_eng_sec: c[4], view_item_rate: c[5], add_to_cart_rate: c[6], purchases: Math.round(c[1] * c[7]), conversion_rate: c[7], revenue: Math.round(c[1] * c[7]) * 1450 })),
+        detail: [['(direct)', '(none)', '直接造訪', 1340], ['line', 'oa', 'LINE', 610], ['line', 'social', 'LINE', 370], ['google', 'organic', 'Google 搜尋', 640], ['facebook', 'cpc', 'Facebook / IG', 420], ['ig', 'social', 'Facebook / IG', 340], ['google', 'cpc', 'Google 廣告', 280], ['shopline.tw', 'referral', '其他', 70], ['yahoo', 'organic', '其他搜尋', 50]].map(x => ({ source: x[0], medium: x[1], channel: x[2], sessions: x[3], purchases: Math.round(x[3] * 0.018) })),
+      };
+    },
+    getRecentMembers: () => {
+      seed = 41;
+      return Array.from({ length: 18 }, (_, i) => ({ user_id: Math.floor(rnd() * 1e16).toString(16).padStart(12, '0') + Math.floor(rnd() * 1e16).toString(16).padStart(12, '0'), last_seen: '2026-11-05 ' + String(23 - i).padStart(2, '0') + ':' + String(ri(10, 59)), sessions: ri(1, 6), pageviews: ri(3, 40), add_to_cart: ri(0, 4), purchases: rnd() < .25 ? 1 : 0, devices: rnd() < .3 ? 2 : 1 }));
+    },
+    getRevenue: (site, s, e) => {
+      seed = 61;
+      const months = []; const end = new Date(e);
+      for (let i = 12; i >= 0; i--) { const d = new Date(end.getFullYear(), end.getMonth() - i, 1); const nr = ri(180000, 320000), rr2 = ri(420000, 700000); months.push({ month: ymd(d).slice(0, 7), new_revenue: nr, returning_revenue: rr2, revenue: nr + rr2, orders: ri(380, 620), buyers: ri(330, 540), new_customers: ri(120, 260) }); }
+      const cur = { orders: 138, revenue: 268400, buyers: 128, guest_orders: 9, new_customers: 51, new_revenue: 82300, returning_revenue: 186100, discount: 61200, subtotal: 341000 };
+      const prev = { orders: 131, revenue: 251900, buyers: 121, guest_orders: 7, new_customers: 47, new_revenue: 79000, returning_revenue: 172900, discount: 52400, subtotal: 315000 };
+      const names = ['清爽防曬乳 SPF50+', '亮白保濕面膜 6 入', '玻尿酸保濕精華', '胺基酸潔顏慕斯', '神經醯胺修護乳', '維他命C亮白精華', '積雪草舒緩化妝水', '杏仁酸煥膚精華'];
+      return { cur, prev, monthly: months,
+        products: names.map((t, i) => ({ title: t, sku: String(10010001 + i), qty: ri(20, 120), revenue: Math.round(90000 / (i + 1)) + ri(1000, 9000), buyers: ri(15, 90), new_share: rnd() * .5 })),
+        promotions: [['滿$999全館免運', 120, 241000, 0, .35], ['會員週全館8折', 64, 152000, 38000, .41], ['面膜買3送1', 22, 31000, 6400, .27]].map(x => ({ name: x[0], orders: x[1], revenue: x[2], discount: x[3], new_share: x[4] })),
+        coupons: [['NEWMEMBER200', 31, 52000, 6200, .94], ['KOL_AMY', 12, 21000, 2400, .75]].map(x => ({ name: x[0], orders: x[1], revenue: x[2], discount: x[3], new_share: x[4] })),
+      };
+    },
+    getPromos: () => ({
+      promotions: [['滿$999全館免運', 120, 241000, 0, .35], ['會員週全館8折', 64, 152000, 38000, .41], ['面膜買3送1', 22, 31000, 6400, .27]].map(x => ({ name: x[0], orders: x[1], revenue: x[2], discount: x[3], new_share: x[4] })),
+      coupons: [['WELCOME100', 61, 180000, 18200, .05], ['VIP2026', 57, 240000, 21400, 0]].map(x => ({ name: x[0], orders: x[1], revenue: x[2], discount: x[3], new_share: x[4] })),
+    }),
+    getRetention: () => {
+      seed = 71;
+      const now = new Date(); const cohorts = [];
+      for (let i = 12; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); const size = ri(150, 320); const ret = []; for (let k = 1; k <= i; k++) ret.push({ k, n: Math.round(size * (k === 1 ? .12 : .07 / Math.sqrt(k)) * (0.7 + rnd() * 0.6)) }); cohorts.push({ cohort: ymd(d).slice(0, 7), size, ret }); }
+      return { cohorts, summary: { customers: 2410, repurchased_90: 381, repurchased_any: 702, median_gap: 47 }, data_since: '2022-07-01',
+        first_products: [['清爽防曬乳 SPF50+', 412, 71], ['亮白保濕面膜 6 入', 305, 38], ['玻尿酸保濕精華', 201, 44], ['胺基酸潔顏慕斯', 96, 21]].map(x => ({ title: x[0], new_customers: x[1], repurchased_90: x[2] })) };
+    },
+    getSegmentOptions: () => ({
+      concerns: { '頭皮出油': ['出油', '控油', '淨化'], '頭皮屑・頭皮癢': ['頭皮屑', '止癢'], '乾燥・缺水': ['乾燥', '保濕'], '毛躁・受損': ['毛躁', '修護', '髮膜'] },
+      promoKeywords: ['優惠', '折扣', '特價', '限定', '活動', '1+1', '滿額', '免運'], membersReady: true, total: 2867,
+      tiers: [{ v: '一般會員', n: 2767 }, { v: '銀卡 Sliver', n: 21 }, { v: '黑卡 Black', n: 2 }, { v: '白金卡 Platinum', n: 1 }],
+      genders: [{ v: '女', n: 2172 }, { v: '男', n: 375 }, { v: '其他', n: 152 }],
+      ageBands: ['20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60+'].map((v, i) => ({ v, n: [133, 512, 681, 459, 331, 208, 133, 100, 123][i] })),
+      sources: [{ v: 'FBads', n: 478 }, { v: 'KOL', n: 354 }, { v: 'ig', n: 104 }, { v: 'fb', n: 45 }, { v: 'LINE', n: 32 }],
+      tags: [{ v: '已領取試用包', n: 317 }, { v: '銀卡VIP', n: 3 }],
+      skinTypes: [{ v: '油性', n: 1267 }, { v: '敏感', n: 1125 }, { v: '混合', n: 990 }, { v: '乾性', n: 907 }, { v: '中性', n: 714 }],
+      products: products.map(v => ({ v, n: 10 })),
+    }),
+    getSegment: (site, f) => {
+      seed = 51;
+      const total = f.keywords || f.promoMinHits || f.cartAbandon ? 23 : 418;
+      const rows = Array.from({ length: total }, (_, i) => ({ customer_id: Math.floor(rnd() * 1e16).toString(16).padStart(12, '0') + Math.floor(rnd() * 1e16).toString(16).padStart(12, '0'), line_uid: i % 9 === 0 ? 'U' + 'a'.repeat(32) : null, tier: i < 2 ? '銀卡 Sliver' : '一般會員', orders: ri(0, 5), total_spent: ri(0, 9000), gender: rnd() < .8 ? '女' : '男', age_band: ['25-29', '30-34', '35-39'][ri(0, 2)], signup_source: ['FBads', 'KOL', null][ri(0, 2)], tags: i % 4 ? null : '已領取試用包', pageviews: ri(0, 20), kw_hits: f.keywords ? ri(2, 9) : 0, promo_hits: f.promoMinHits ? ri(2, 6) : 0, carts: f.cartAbandon ? ri(1, 3) : 0, purchases: 0 }));
+      return { total, with_line: rows.filter(r => r.line_uid).length, with_behavior: rows.filter(r => r.pageviews).length, rows, lineReady: true, window: { days: f.days } };
+    },
+    getTimeline: (site, id) => {
+      const pid = '1234567890.1793946570', pid2 = '987654321.1790000000';
+      const ev = (t, e, x = {}) => ({ t, ev: e, pid: x.pid || pid, uid: x.uid === undefined ? null : x.uid, dev: x.dev || 'mobile', os: x.os || 'iOS', browser: x.browser || 'Safari', city: 'Taipei', sid: x.sid || 1, url: x.url || null, title: x.title || null, items: x.items || null, revenue: x.revenue || null, src: x.src || null, med: x.med || null, search: x.search || null, link: null });
+      const u = ['https:', '', 'shop.example.com'].join('/'); // 避免字串裡出現兩個斜線（Apps Script 會誤當成註解刪掉）
+      const A = { sid: 1793946570 }, B = { sid: 1794110000, uid: id }, C = { sid: 1794200000, uid: id, pid: pid2, dev: 'desktop', os: 'Windows', browser: 'Chrome' };
+      return { id, events: [
+        ev('2026-11-03 21:14:02', 'first_visit', A), ev('2026-11-03 21:14:02', 'session_start', { ...A, src: 'line', med: 'oa' }),
+        ev('2026-11-03 21:14:02', 'page_view', { ...A, url: u + '/promotions/1111?utm_source=line&utm_medium=oa', title: '雙 11 限定優惠', src: 'line', med: 'oa' }),
+        ev('2026-11-03 21:15:40', 'view_item_list', { ...A, items: '淨化洗髮精 500ml、保濕潤髮乳 500ml、修護髮膜 200ml', url: u + '/promotions/1111' }),
+        ev('2026-11-03 21:16:05', 'page_view', { ...A, url: u + '/products/purifying-shampoo', title: '淨化洗髮精 500ml' }),
+        ev('2026-11-03 21:16:05', 'view_item', { ...A, items: '淨化洗髮精 500ml', url: u + '/products/purifying-shampoo' }),
+        ev('2026-11-03 21:17:30', 'scroll', { ...A, url: u + '/products/purifying-shampoo' }),
+        ev('2026-11-05 12:31:11', 'session_start', B), ev('2026-11-05 12:31:11', 'page_view', { ...B, uid: null, url: u + '/users/sign_in', title: '會員登入' }),
+        ev('2026-11-05 12:31:48', 'login', B), ev('2026-11-05 12:31:49', 'page_view', { ...B, url: u + '/', title: 'DEMO HAIR 官方網站' }),
+        ev('2026-11-05 12:32:30', 'view_search_results', { ...B, search: '頭皮', url: u + '/search?q=頭皮' }),
+        ev('2026-11-05 12:33:02', 'page_view', { ...B, url: u + '/products/scalp-serum', title: '頭皮淨化精華 50ml' }),
+        ev('2026-11-05 12:33:02', 'view_item', { ...B, items: '頭皮淨化精華 50ml', url: u + '/products/scalp-serum' }),
+        ev('2026-11-05 12:34:10', 'add_to_cart', { ...B, items: '頭皮淨化精華 50ml', url: u + '/products/scalp-serum' }),
+        ev('2026-11-05 22:05:41', 'session_start', C), ev('2026-11-05 22:05:41', 'page_view', { ...C, url: u + '/cart', title: '購物車', src: 'google', med: 'organic' }),
+        ev('2026-11-05 22:06:10', 'add_to_cart', { ...C, items: '淨化洗髮精 500ml', url: u + '/cart' }),
+        ev('2026-11-05 22:06:55', 'begin_checkout', { ...C, items: '頭皮淨化精華 50ml、淨化洗髮精 500ml', url: u + '/checkout' }),
+        ev('2026-11-05 22:09:20', 'add_payment_info', { ...C, url: u + '/checkout' }),
+        ev('2026-11-05 22:10:02', 'purchase', { ...C, items: '頭皮淨化精華 50ml、淨化洗髮精 500ml', revenue: 1680, url: u + '/checkout/complete', title: '訂單完成' }),
+      ] };
+    },
+  };
+})();
+</script>
+</body>
+</html>

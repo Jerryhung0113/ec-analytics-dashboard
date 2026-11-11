@@ -1,0 +1,7 @@
+# 任何資料檔都不進版控
+*.csv
+*.xls
+*.xlsx
+*.json.key
+.clasp.json
+.env
